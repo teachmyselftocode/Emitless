@@ -8,6 +8,18 @@
     tools:context="com.companyname.emitless2.MainActivity">
 
     <Button
+        android:id="@+id/idBuTest2"
+        android:layout_width="85dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="240dp"
+        android:layout_marginTop="420dp"
+        android:background="@android:color/darker_gray"
+        android:onClick="buTest2"
+        android:text="Asynctask"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
         android:id="@+id/idBuTest"
         android:layout_width="85dp"
         android:layout_height="wrap_content"

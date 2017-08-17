@@ -22,8 +22,11 @@ import com.android.volley.RequestQueue
 import com.android.volley.toolbox.DiskBasedCache
 import com.android.volley.toolbox.HurlStack
 import com.android.volley.toolbox.BasicNetwork
-
-
+import java.io.BufferedReader
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 
 
 class MainActivity : AppCompatActivity() {
@@ -35,23 +38,135 @@ class MainActivity : AppCompatActivity() {
         checkPermission()
     }
 
+    fun showToasT(){
+        Toast.makeText(this, "Finished", Toast.LENGTH_SHORT).show()
+    }
+    inner class MyAsyncTask : AsyncTask<String,String,String>(){
+        override fun onPreExecute() {
+        }
+        override fun doInBackground(vararg p0: String?): String { //Cannot access to UI from this block
+            try {
+                for (i in 0 until p0.size) {
+                    val url = URL(p0[i]) //means 1st index of array??
+                    val urlConnect = url.openConnection() as HttpURLConnection
+                    urlConnect.connectTimeout = 7000
 
-//    inner class MyAsyncTask : AsyncTask<String,Int,Long>(){
+                    val inString = ArrayList<String>()
+                    inString.add(ConvertStreamToString(urlConnect.inputStream)) //Converts the response to string?
+                    publishProgress(inString[i])
+                    try {
+                        Thread.sleep(500)
+                    } catch (e: InterruptedException) {}
+                }
+            }catch (e:Exception){}
+            return " "
+        }
+
+        override fun onProgressUpdate(vararg values: String?) {
+            try{
+                val jsonObject = ArrayList<String>()
+                for (i in 0 until values.size){
+
+                    jsonObject.add(values[i]!!)
+                }
+                idTextView2.text =  jsonObject[0]
+            }catch (e:Exception){}
+        }
+        override fun onPostExecute(result: String?) {
+        }
+    }
+
+    fun ConvertStreamToString(inputStream: InputStream): String{
+        val bufferReader = BufferedReader(InputStreamReader(inputStream))
+        var line =""
+        var allString=""
+        try{
+            do{
+                line=bufferReader.readLine()
+                if (line!=null){
+                    allString+=line
+                }
+            } while (line!=null)
+            inputStream.close()
+        } catch (e:Exception){}
+        return allString
+    }
+
+    var afterParsingJSONLocal = ""
+    fun parseJSONObjectSecond(responseTextLocal : String) {
+
+        //TODO store the arrays here?
+        val mainObject: JSONObject = JSONObject(responseTextLocal) //change to i when for loop is used
+                .getJSONArray("rows")
+                .getJSONObject(0)
+                .getJSONArray("elements")
+                .getJSONObject(0)
+
+        val distance = mainObject.getJSONObject("distance").get("text").toString()
+        val duration = mainObject.getJSONObject("duration").get("text").toString()
+
+        val origin = JSONObject(responseTextLocal).get("origin_addresses").toString()
+        val destination = JSONObject(responseTextLocal).get("destination_addresses").toString()
+
+
+        //String builder to remove unnecessary characters for origin and destination string
+        val cleanOrigin = cleanCode(origin)
+        val cleanDestination = cleanCode(destination)
+
+
+        //new code
+        afterParsingJSONLocal = "From $cleanOrigin to $cleanDestination, the distance is $distance and the duration is $duration "
 //
-//        override fun onPreExecute() {
-//            super.onPreExecute()
+//        var vehicleType = ""
+//        when (i) {
+//            0 -> vehicleType = "driving"
+//            1 -> vehicleType = "walking"
+//            2 -> vehicleType = "bicycling"
+//            3 -> vehicleType = "bus"
+//            4 -> vehicleType = "subway"
+//            5 -> vehicleType = "train"
 //        }
-//
-//        override fun doInBackground(vararg p0: String?): Long {
-//            volleyRequests() //To change body of created functions use File | Settings | File Templates.
-//            return
-//        }
-//
-//        override fun onPostExecute(result: Long?) {
-//            super.onPostExecute(result)
-//        }
-//
-//    }
+//        afterParsingJSONLocal += "when travelling by $vehicleType"
+
+    }
+
+    fun buTest2 (view:View){
+        //        val locationInput = idInputDestination.text.toString()
+        val locationInput = "WanChai"
+        val locationCoordinatesLong = currentLocation!!.longitude
+        val locationCoordinatesLat = currentLocation!!.latitude
+
+        val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
+        val transportMode = arrayListOf("&mode=driving" ,"&mode=walking", "&mode=bicycling",
+                "&mode=transit&transit_mode=bus", "mode=transit&transit_mode=subway", "mode=transit&transit_mode=train")
+
+        var requestURLArray = ArrayList<String>()
+        for (i in 0 until transportMode.size) {
+
+            requestURLArray.add("https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins= " +
+                    "$locationCoordinatesLat,$locationCoordinatesLong &destinations=$locationInput ${transportMode[i]} &key= $myAPIKey")
+        }
+        MyAsyncTask().execute(requestURLArray[0],requestURLArray[1],requestURLArray[2]
+                     ,requestURLArray[3], requestURLArray[4], requestURLArray[5])
+    }
+    fun loadUrls(){
+        val locationInput = "WanChai"
+        val locationCoordinatesLong = 113.947
+        val locationCoordinatesLat = 22.2913
+        val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
+        val transportMode = arrayListOf("&mode=driving" ,"&mode=walking", "&mode=bicycling",
+                "&mode=transit&transit_mode=bus", "mode=transit&transit_mode=subway", "mode=transit&transit_mode=train")
+
+        var requestURLArray = ArrayList<String>()
+        for (i in 0 until transportMode.size) {
+
+            requestURLArray.add("https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins= " +
+                    "$locationCoordinatesLat,$locationCoordinatesLong &destinations=$locationInput ${transportMode[i]} &key= $myAPIKey")
+        }
+        MyAsyncTask().execute(requestURLArray[0],requestURLArray[1],requestURLArray[2]
+                ,requestURLArray[3], requestURLArray[4], requestURLArray[5])
+    }
+
 
     fun buTest(view:View){
         volleyRequests()
