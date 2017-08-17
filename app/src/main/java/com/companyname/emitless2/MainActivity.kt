@@ -12,6 +12,7 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.ActivityCompat
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import com.android.volley.*
@@ -38,41 +39,57 @@ class MainActivity : AppCompatActivity() {
         checkPermission()
     }
 
-    fun showToasT(){
+    fun showToastEnd(){
         Toast.makeText(this, "Finished", Toast.LENGTH_SHORT).show()
     }
+    fun showToastStart(){
+        Toast.makeText(this, "Start", Toast.LENGTH_SHORT).show()
+    }
+
     inner class MyAsyncTask : AsyncTask<String,String,String>(){
         override fun onPreExecute() {
+            showToastStart()
         }
         override fun doInBackground(vararg p0: String?): String { //Cannot access to UI from this block
-            try {
-                for (i in 0 until p0.size) {
-                    val url = URL(p0[i]) //means 1st index of array??
-                    val urlConnect = url.openConnection() as HttpURLConnection
-                    urlConnect.connectTimeout = 7000
 
-                    val inString = ArrayList<String>()
-                    inString.add(ConvertStreamToString(urlConnect.inputStream)) //Converts the response to string?
-                    publishProgress(inString[i])
+            val inString = ArrayList<String>()
+                for (i in 0 until 6) {
+
                     try {
-                        Thread.sleep(500)
-                    } catch (e: InterruptedException) {}
+                        val url = URL(p0[i])
+                        Log.d("APP_TEST", "" + p0[i])//means 1st index of array??
+                        val urlConnect = url.openConnection() as HttpURLConnection
+                        urlConnect.connectTimeout = 7000
+
+                        inString.add(ConvertStreamToString(urlConnect.inputStream)) //Converts the response to string?
+
+                        try {
+                            Thread.sleep(500)
+                        } catch (e: InterruptedException) {
+
+                        }
+
+                    } catch (e: Exception) { }
                 }
-            }catch (e:Exception){}
+            publishProgress(inString[0],inString[1],inString[2],inString[3],inString[4],inString[5])
+
             return " "
         }
 
         override fun onProgressUpdate(vararg values: String?) {
-            try{
-                val jsonObject = ArrayList<String>()
-                for (i in 0 until values.size){
 
+            val jsonObject = ArrayList<String>()
+            for (i in 0 until 6){
+                try {
                     jsonObject.add(values[i]!!)
-                }
-                idTextView2.text =  jsonObject[0]
-            }catch (e:Exception){}
+                    Log.d("Testing", "" + values[i])
+                } catch (e:Exception){}
+            }
+            idTextView2.text =  jsonObject[0]
+
         }
         override fun onPostExecute(result: String?) {
+            showToastEnd()
         }
     }
 
@@ -91,6 +108,10 @@ class MainActivity : AppCompatActivity() {
         } catch (e:Exception){}
         return allString
     }
+
+
+
+
 
     var afterParsingJSONLocal = ""
     fun parseJSONObjectSecond(responseTextLocal : String) {
@@ -132,7 +153,7 @@ class MainActivity : AppCompatActivity() {
 
     fun buTest2 (view:View){
         //        val locationInput = idInputDestination.text.toString()
-        val locationInput = "WanChai"
+        val locationInput = "AsiaWorldExpo"
         val locationCoordinatesLong = currentLocation!!.longitude
         val locationCoordinatesLat = currentLocation!!.latitude
 
@@ -234,7 +255,7 @@ class MainActivity : AppCompatActivity() {
             },
                     Response.ErrorListener { responseText.add("That didn't work!") }))
 
-            //TODO add next queue!?? Ans: No need seems working
+
         }
         mRequestQueue.add(jsonObjectRequestArray[0])
         mRequestQueue.add(jsonObjectRequestArray[1])
