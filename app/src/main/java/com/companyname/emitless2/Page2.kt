@@ -16,7 +16,7 @@ class Page2 : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_page2)
 
-        val message0 = intent.getStringExtra("JSONObject[0]")
+        val message0 = intent.getStringExtra("JSONObject")
 //        val message1 = intent.getStringExtra("JSONObject[1]")
 //        val message2 = intent.getStringExtra("JSONObject[2]")
 //        val message3 = intent.getStringExtra("JSONObject[3]")

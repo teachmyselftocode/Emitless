@@ -16,13 +16,10 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import com.android.volley.*
-import com.android.volley.toolbox.JsonObjectRequest
 import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONObject
 import com.android.volley.RequestQueue
-import com.android.volley.toolbox.DiskBasedCache
-import com.android.volley.toolbox.HurlStack
-import com.android.volley.toolbox.BasicNetwork
+import com.android.volley.toolbox.*
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -39,6 +36,9 @@ class MainActivity : AppCompatActivity() {
         checkPermission()
     }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//THIS CODE USES ASYNCTASK BUT FAILED TO SORT OUT THE RESPONSE
+/*
     fun showToastEnd(){
         Toast.makeText(this, "Finished", Toast.LENGTH_SHORT).show()
     }
@@ -51,43 +51,36 @@ class MainActivity : AppCompatActivity() {
             showToastStart()
         }
         override fun doInBackground(vararg p0: String?): String { //Cannot access to UI from this block
+            try {
+                val inString = ArrayList<String>()
+                for (i in 0 until p0.size) {
+                    val url = URL(p0[i])
 
-            val inString = ArrayList<String>()
-                for (i in 0 until 6) {
-
+                    val urlConnect = url.openConnection() as HttpURLConnection
+                    urlConnect.connectTimeout = 7000
+                    inString.add(ConvertStreamToString(urlConnect.inputStream)) //Converts the response to string?
+                    publishProgress(inString[i])
+                    Log.d("APP_TEST", "" + p0[i])//means 1st index of array??
                     try {
-                        val url = URL(p0[i])
-                        Log.d("APP_TEST", "" + p0[i])//means 1st index of array??
-                        val urlConnect = url.openConnection() as HttpURLConnection
-                        urlConnect.connectTimeout = 7000
-
-                        inString.add(ConvertStreamToString(urlConnect.inputStream)) //Converts the response to string?
-
-                        try {
-                            Thread.sleep(500)
-                        } catch (e: InterruptedException) {
-
-                        }
-
-                    } catch (e: Exception) { }
+                        Thread.sleep(500)
+                    } catch (e: InterruptedException) {}
                 }
-            publishProgress(inString[0],inString[1],inString[2],inString[3],inString[4],inString[5])
+            }catch (r:Exception){}
 
             return " "
         }
 
         override fun onProgressUpdate(vararg values: String?) {
-
-            val jsonObject = ArrayList<String>()
-            for (i in 0 until 6){
-                try {
-                    jsonObject.add(values[i]!!)
-                    Log.d("Testing", "" + values[i])
-                } catch (e:Exception){}
-            }
-            idTextView2.text =  jsonObject[0]
-
+            try {
+                val jsonObject = ArrayList<String>()
+                    for (i in 0 until values.size) {
+                        jsonObject.add(values[i]!!)
+                        Log.d("Testing", "" + values[i])
+                    }
+                idTextView2.text = jsonObject[1]
+            } catch (e:Exception){}
         }
+
         override fun onPostExecute(result: String?) {
             showToastEnd()
         }
@@ -108,10 +101,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e:Exception){}
         return allString
     }
-
-
-
-
 
     var afterParsingJSONLocal = ""
     fun parseJSONObjectSecond(responseTextLocal : String) {
@@ -170,34 +159,143 @@ class MainActivity : AppCompatActivity() {
         MyAsyncTask().execute(requestURLArray[0],requestURLArray[1],requestURLArray[2]
                      ,requestURLArray[3], requestURLArray[4], requestURLArray[5])
     }
-    fun loadUrls(){
+*/
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //THIS CODE IS USING MAP. FROM DISCORD FRIEND STILL NOT SORTING THE RESPONSE
+    var beforeParsingText = ArrayList<String>()
+    fun buTest(view:View){
+        volleyRequests2()
+
+        var totalText =""
+        for (i in 0 until responses.size){
+//            beforeParsingText.add(responses[i].toString())
+            totalText += responses[i] //for printing and testing the responses only
+            }
+
+//        parseJSONObject2()
+        fun startIntent(){
+            val intent = Intent(this, Page2::class.java)
+            intent.putExtra("JSONObject", totalText)
+
+            startActivity(intent)
+        }
+
+//        Handler().postDelayed({idTextView2.text= afterParsingJSON2[0]}, 2000)
+        Handler().postDelayed({idTextView2.text= totalText}, 5000)
+//        Handler().postDelayed({startIntent()}, 5000)
+
+    }
+
+    val responses = mutableListOf<String>()
+
+    //NEW CODE AUG 18 DISCORD HELP
+    fun volleyRequests2() {
         val locationInput = "WanChai"
-        val locationCoordinatesLong = 113.947
-        val locationCoordinatesLat = 22.2913
+        val locationCoordinatesLong = currentLocation!!.longitude
+        val locationCoordinatesLat = currentLocation!!.latitude
+
+        val myAPIUrl = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins="
         val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
-        val transportMode = arrayListOf("&mode=driving" ,"&mode=walking", "&mode=bicycling",
+        val transportMode = listOf("&mode=driving", "&mode=walking", "&mode=bicycling",
                 "&mode=transit&transit_mode=bus", "mode=transit&transit_mode=subway", "mode=transit&transit_mode=train")
 
-        var requestURLArray = ArrayList<String>()
+        val queue = Volley.newRequestQueue(this)
+
+        transportMode.map { "$myAPIUrl$locationCoordinatesLat,$locationCoordinatesLong&destinations=$locationInput$it&key=$myAPIKey" }
+                .map {
+                    JsonObjectRequest(Request.Method.GET, it, null, Response.Listener {
+                        responses.add(it.toString()) }, Response.ErrorListener {})
+                }.forEach { queue.add(it) }
+    }
+
+    //    var afterParsingJSON : String = ""
+    var afterParsingJSON2 = arrayListOf<String>()
+    fun parseJSONObject2() {
+
+        for (i in 0 until 5) {
+            val mainObject: JSONObject = JSONObject(beforeParsingText[i]) //change to i when for loop is used
+                    .getJSONArray("rows")
+                    .getJSONObject(0)
+                    .getJSONArray("elements")
+                    .getJSONObject(0)
+
+            val distance = mainObject.getJSONObject("distance").get("text").toString()
+            val duration = mainObject.getJSONObject("duration").get("text").toString()
+
+            val origin = JSONObject(beforeParsingText[i]).get("origin_addresses").toString()
+            val destination = JSONObject(beforeParsingText[i]).get("destination_addresses").toString()
+
+
+            //String builder to remove unnecessary characters for origin and destination string
+            val cleanOrigin = cleanCode2(origin)
+            val cleanDestination = cleanCode2(destination)
+            
+            //new code
+            afterParsingJSON2[i] = "From $cleanOrigin to $cleanDestination, the distance is $distance and the duration is $duration "
+            var vehicleType = ""
+            when (i) {
+                0 -> vehicleType = "driving"
+                1 -> vehicleType = "walking"
+                2 -> vehicleType = "bicycling"
+                3 -> vehicleType = "bus"
+                4 -> vehicleType = "subway"
+                5 -> vehicleType = "train"
+            }
+            afterParsingJSON2[i] += "when travelling by $vehicleType"
+
+        }
+    }
+
+
+    //Function to clean code for origins and destinations
+    fun cleanCode2(str: String): String {
+        val stringAppender = StringBuilder()
+        for (a in 0 until str.length) {
+            if (str[a] != '[' && str[a] != ']' && str[a] != '"') {
+                stringAppender.append(str[a])
+            }
+        }
+        return stringAppender.toString()
+    }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//THIS CODE IS TO SORT VOLLEY REQUESTS
+    var responseText2 = ArrayList<String>()
+
+    fun buTest3(view:View){
+
+    //NEW CODE uses JAVA
+        val locationInput = "WanChai"
+        val locationCoordinatesLong = currentLocation!!.longitude
+        val locationCoordinatesLat = currentLocation!!.latitude
+        val myAPIUrl = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins="
+        val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
+        val transportMode = arrayListOf("&mode=driving", "&mode=walking", "&mode=bicycling",
+                "&mode=transit&transit_mode=bus", "mode=transit&transit_mode=subway", "mode=transit&transit_mode=train")
+
+
         for (i in 0 until transportMode.size) {
 
-            requestURLArray.add("https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins= " +
-                    "$locationCoordinatesLat,$locationCoordinatesLong &destinations=$locationInput ${transportMode[i]} &key= $myAPIKey")
+            val requestURL = "$myAPIUrl$locationCoordinatesLat,$locationCoordinatesLong&destinations=$locationInput${transportMode[i]}&key=$myAPIKey"
+
+            val volleyRequests = VolleyRequestsJava(this)
+            try {
+                volleyRequests.youFunctionForVolleyRequest({ result -> responseText2.add(result.toString()) }, requestURL)
+            }catch (e:Exception){}
         }
-        MyAsyncTask().execute(requestURLArray[0],requestURLArray[1],requestURLArray[2]
-                ,requestURLArray[3], requestURLArray[4], requestURLArray[5])
-    }
 
 
-    fun buTest(view:View){
-        volleyRequests()
-        Handler().postDelayed({idTextView2.text=responseText[1]}, 2000)
+        var totalText =""
+        for (i in 0 until responseText2.size){
+//            beforeParsingText.add(responses[i].toString())
+            totalText += responseText2[i] //for printing and testing the responses only
+        }
 
+//        idTextView2.text = "The longitude is ${currentLocation!!.longitude.toString()} and the latitude is ${currentLocation!!.latitude.toString()}"
 
-    }
-
-    fun buGo(view:View){
-        idTextView2.text = "The longitude is ${currentLocation!!.longitude.toString()} and the latitude is ${currentLocation!!.latitude.toString()}"
+        Handler().postDelayed({idTextView2.text = totalText}, 10000)
 
 //        val spinner = idProgressBar
 //        spinner.visibility = View.VISIBLE //not showing
@@ -206,13 +304,13 @@ class MainActivity : AppCompatActivity() {
 //        val doTask = MyAsyncTask()
 //        doTask.execute()
 
-        volleyRequests()
+
 
         //Delays the Parsing for 2 second.
-        Handler().postDelayed({parseJSONObject()}, 2000)
+//        Handler().postDelayed({parseJSONObject()}, 2000)
 
         //Delays the intent to Page2 for 2 second.
-        Handler().postDelayed({startIntent()}, 2000) //TODO Use a request accept method not delay with time.
+//        Handler().postDelayed({startIntent()}, 2000) //TODO Use a request accept method not delay with time.
 
 
 //        spinner.visibility = View.GONE //not showing
@@ -222,47 +320,45 @@ class MainActivity : AppCompatActivity() {
 
     var responseText = ArrayList<String>() // stores the response 6 times, i.e. 6 different url response
     val jsonObjectRequestArray = ArrayList<JsonObjectRequest>()
-    fun volleyRequests(){
 
+
+
+    fun volleyRequests() {
 //        val locationInput = idInputDestination.text.toString()
         val locationInput = "WanChai"
-        val locationCoordinatesLong = currentLocation!!.longitude
-        val locationCoordinatesLat = currentLocation!!.latitude
+            val locationCoordinatesLong = currentLocation!!.longitude
+            val locationCoordinatesLat = currentLocation!!.latitude
 
-        //Using Volley to send request
-        //TODO Singleton? or leave it like this?
-        val cache : Cache= DiskBasedCache(cacheDir, 1024 * 1024)
-        val network : Network= BasicNetwork(HurlStack())
-        val mRequestQueue : RequestQueue= RequestQueue(cache, network)
-        mRequestQueue.start()
+            //Using Volley to send request
+            //TODO Singleton? or leave it like this?
+            val cache: Cache = DiskBasedCache(cacheDir, 1024 * 1024)
+            val network: Network = BasicNetwork(HurlStack())
+            val mRequestQueue: RequestQueue = RequestQueue(cache, network)
+            mRequestQueue.start()
 
-        val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
-        val transportMode = arrayListOf("&mode=driving" ,"&mode=walking", "&mode=bicycling",
-                "&mode=transit&transit_mode=bus", "mode=transit&transit_mode=subway", "mode=transit&transit_mode=train")
+            val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
+            val transportMode = arrayListOf("&mode=driving", "&mode=walking", "&mode=bicycling",
+                    "&mode=transit&transit_mode=bus", "mode=transit&transit_mode=subway", "mode=transit&transit_mode=train")
 
 
-        //For loop for sending requests 6 times, sending 6 different urls
-        //TODO why does not work??
-        for(i in 0 until transportMode.size) {
+            //For loop for sending requests 6 times, sending 6 different urls
+            //TODO why does not work??
+        for (i in 0 until transportMode.size) {
 
             val requestURL = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins= " +
                     "$locationCoordinatesLat,$locationCoordinatesLong &destinations=$locationInput ${transportMode[i]} &key= $myAPIKey"
 
 
-            jsonObjectRequestArray.add( JsonObjectRequest(Request.Method.GET, requestURL,
+            jsonObjectRequestArray.add(JsonObjectRequest(Request.Method.GET, requestURL,
                     null, Response.Listener<JSONObject> { response ->
                 responseText.add(response.toString())
+
             },
                     Response.ErrorListener { responseText.add("That didn't work!") }))
 
-
+            mRequestQueue.add(jsonObjectRequestArray[i])
         }
-        mRequestQueue.add(jsonObjectRequestArray[0])
-        mRequestQueue.add(jsonObjectRequestArray[1])
-        mRequestQueue.add(jsonObjectRequestArray[2])
-        mRequestQueue.add(jsonObjectRequestArray[3])
-        mRequestQueue.add(jsonObjectRequestArray[4])
-        mRequestQueue.add(jsonObjectRequestArray[5])
+
 
     }
 
@@ -329,6 +425,7 @@ class MainActivity : AppCompatActivity() {
         return stringAppender.toString()
     }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     val myRequestCode = 123
     fun checkPermission(){
