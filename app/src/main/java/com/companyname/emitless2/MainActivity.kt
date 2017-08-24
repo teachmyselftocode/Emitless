@@ -1,5 +1,6 @@
 package com.companyname.emitless2
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -262,18 +263,17 @@ class MainActivity : AppCompatActivity() {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //THIS CODE IS TO SORT VOLLEY REQUESTS
-    var responseText2 = ArrayList<String>()
+    var responseText = ArrayList<String>()
 
     fun buTest3(view:View){
 
-    //NEW CODE uses JAVA
         val locationInput = "WanChai"
         val locationCoordinatesLong = currentLocation!!.longitude
         val locationCoordinatesLat = currentLocation!!.latitude
         val myAPIUrl = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins="
         val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
         val transportMode = arrayListOf("&mode=driving", "&mode=walking", "&mode=bicycling",
-                "&mode=transit&transit_mode=bus", "mode=transit&transit_mode=subway", "mode=transit&transit_mode=train")
+                "&mode=transit&transit_mode=bus", "&mode=transit&transit_mode=subway", "&mode=transit&transit_mode=train")
 
 
         for (i in 0 until transportMode.size) {
@@ -281,21 +281,27 @@ class MainActivity : AppCompatActivity() {
             val requestURL = "$myAPIUrl$locationCoordinatesLat,$locationCoordinatesLong&destinations=$locationInput${transportMode[i]}&key=$myAPIKey"
 
             val volleyRequests = VolleyRequestsJava(this)
+
+
             try {
-                volleyRequests.youFunctionForVolleyRequest({ result -> responseText2.add(result.toString()) }, requestURL)
-            }catch (e:Exception){}
+                volleyRequests.yourFunctionForVolleyRequest({ result -> responseText.add(result.toString() + "              ") }, requestURL)
+                Thread.sleep(1000) //sleep for 3 seconds!! every requests
+            } catch (e:Exception){responseText.add("ERROR HERE!")}
+
         }
 
 
-        var totalText =""
-        for (i in 0 until responseText2.size){
-//            beforeParsingText.add(responses[i].toString())
-            totalText += responseText2[i] //for printing and testing the responses only
-        }
 
-//        idTextView2.text = "The longitude is ${currentLocation!!.longitude.toString()} and the latitude is ${currentLocation!!.latitude.toString()}"
+        Handler().postDelayed({
+//            val totalText = responseText2[0] + responseText2[1] + responseText2[2] + responseText2[3] + responseText2[4] + responseText2[5]
+            var totalText = "            "
+                        for (i in 0 until responseText.size) {
+                totalText += parseJSONObject(responseText[i]) + "                  "
+            }
+            idTextView2.text = totalText }, 2000)
 
-        Handler().postDelayed({idTextView2.text = totalText}, 10000)
+
+
 
 //        val spinner = idProgressBar
 //        spinner.visibility = View.VISIBLE //not showing
@@ -306,106 +312,61 @@ class MainActivity : AppCompatActivity() {
 
 
 
-        //Delays the Parsing for 2 second.
-//        Handler().postDelayed({parseJSONObject()}, 2000)
-
-        //Delays the intent to Page2 for 2 second.
-//        Handler().postDelayed({startIntent()}, 2000) //TODO Use a request accept method not delay with time.
-
 
 //        spinner.visibility = View.GONE //not showing
 
     }
 
 
-    var responseText = ArrayList<String>() // stores the response 6 times, i.e. 6 different url response
-    val jsonObjectRequestArray = ArrayList<JsonObjectRequest>()
 
 
 
-    fun volleyRequests() {
-//        val locationInput = idInputDestination.text.toString()
-        val locationInput = "WanChai"
-            val locationCoordinatesLong = currentLocation!!.longitude
-            val locationCoordinatesLat = currentLocation!!.latitude
-
-            //Using Volley to send request
-            //TODO Singleton? or leave it like this?
-            val cache: Cache = DiskBasedCache(cacheDir, 1024 * 1024)
-            val network: Network = BasicNetwork(HurlStack())
-            val mRequestQueue: RequestQueue = RequestQueue(cache, network)
-            mRequestQueue.start()
-
-            val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
-            val transportMode = arrayListOf("&mode=driving", "&mode=walking", "&mode=bicycling",
-                    "&mode=transit&transit_mode=bus", "mode=transit&transit_mode=subway", "mode=transit&transit_mode=train")
-
-
-            //For loop for sending requests 6 times, sending 6 different urls
-            //TODO why does not work??
-        for (i in 0 until transportMode.size) {
-
-            val requestURL = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins= " +
-                    "$locationCoordinatesLat,$locationCoordinatesLong &destinations=$locationInput ${transportMode[i]} &key= $myAPIKey"
-
-
-            jsonObjectRequestArray.add(JsonObjectRequest(Request.Method.GET, requestURL,
-                    null, Response.Listener<JSONObject> { response ->
-                responseText.add(response.toString())
-
-            },
-                    Response.ErrorListener { responseText.add("That didn't work!") }))
-
-            mRequestQueue.add(jsonObjectRequestArray[i])
-        }
-
-
-    }
-
-
-//    var afterParsingJSON : String = ""
-    var afterParsingJSON = arrayListOf<String>()
-    fun parseJSONObject() {
-
-    //TODO store the arrays here
-        for (i in 0 until 5) {
-            val mainObject: JSONObject = JSONObject(responseText[i]) //change to i when for loop is used
+    fun parseJSONObject(parseString : String) : String {
+        var newString = ""
+        try {
+            val mainObject: JSONObject = JSONObject(parseString) //change to i when for loop is used
                     .getJSONArray("rows")
                     .getJSONObject(0)
                     .getJSONArray("elements")
                     .getJSONObject(0)
-
             val distance = mainObject.getJSONObject("distance").get("text").toString()
             val duration = mainObject.getJSONObject("duration").get("text").toString()
 
-            val origin = JSONObject(responseText[i]).get("origin_addresses").toString()
-            val destination = JSONObject(responseText[i]).get("destination_addresses").toString()
-
-
-            //String builder to remove unnecessary characters for origin and destination string
+            val origin = JSONObject(parseString).get("origin_addresses").toString()
+            val destination = JSONObject(parseString).get("destination_addresses").toString()
             val cleanOrigin = cleanCode(origin)
             val cleanDestination = cleanCode(destination)
 
+            newString = "From $cleanOrigin to $cleanDestination, the distance is $distance and the duration is $duration "
 
-            //new code
-            afterParsingJSON[i] = "From $cleanOrigin to $cleanDestination, the distance is $distance and the duration is $duration "
-            var vehicleType = ""
-            when (i) {
-                0 -> vehicleType = "driving"
-                1 -> vehicleType = "walking"
-                2 -> vehicleType = "bicycling"
-                3 -> vehicleType = "bus"
-                4 -> vehicleType = "subway"
-                5 -> vehicleType = "train"
-            }
-            afterParsingJSON[i] += "when travelling by $vehicleType"
+//            var vehicleType = ""
+//            for (i in 0 until responseText.size) {
+//                when (i) {
+//                    0 -> vehicleType = "driving"
+//                    1 -> vehicleType = "walking"
+//                    2 -> vehicleType = "bicycling"
+//                    3 -> vehicleType = "bus"
+//                    4 -> vehicleType = "subway"
+//                    5 -> vehicleType = "train"
+//                }
+//                responseText[i] += "when travelling by $vehicleType"
+//                newString = responseText[i]
+//
+//            }
+
+        }catch (e:Exception){
+            return "               ZERO RESULTS              "
         }
+        return  newString
+
 
     }
 
+
+
     fun startIntent(){
         val intent = Intent(this, Page2::class.java)
-        intent.putExtra("JSONObject[]", afterParsingJSON[0])
+        intent.putExtra("JSONObject[]", responseText[0])
 //        intent.putExtra("JSONObject[1]", afterParsingJSON[1])
 //        intent.putExtra("JSONObject[2]", afterParsingJSON[2])
 //        intent.putExtra("JSONObject[3]", afterParsingJSON[3])

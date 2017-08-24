@@ -23,10 +23,10 @@ public class VolleyRequestsJava {
     //Just a constructor for the context to pass Main Activity as this class is on another file.
     private Context ctx;
     public VolleyRequestsJava(Context mContext) {
-        ctx = mContext;
+        this.ctx = mContext;
     }
 
-    public void youFunctionForVolleyRequest(final ServerCallbackJava callback, final String url) {
+    public void yourFunctionForVolleyRequest(final ServerCallbackJava callback, final String url) {
 
         RequestQueue queue = Volley.newRequestQueue(ctx);
 
