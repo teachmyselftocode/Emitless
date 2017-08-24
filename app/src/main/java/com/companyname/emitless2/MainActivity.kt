@@ -163,7 +163,7 @@ class MainActivity : AppCompatActivity() {
 */
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    //THIS CODE IS USING MAP. FROM DISCORD FRIEND STILL NOT SORTING THE RESPONSE
-    var beforeParsingText = ArrayList<String>()
+/*    var beforeParsingText = ArrayList<String>()
     fun buTest(view:View){
         volleyRequests2()
 
@@ -259,48 +259,31 @@ class MainActivity : AppCompatActivity() {
         return stringAppender.toString()
     }
 
-
+*/
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //THIS CODE IS TO SORT VOLLEY REQUESTS
     var responseText = ArrayList<String>()
 
-    fun buTest3(view:View){
+    fun buGo(view:View){
 
-        val locationInput = "WanChai"
+        val locationInput = idInputDestination.text.toString()
         val locationCoordinatesLong = currentLocation!!.longitude
         val locationCoordinatesLat = currentLocation!!.latitude
         val myAPIUrl = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins="
         val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
         val transportMode = arrayListOf("&mode=driving", "&mode=walking", "&mode=bicycling",
                 "&mode=transit&transit_mode=bus", "&mode=transit&transit_mode=subway", "&mode=transit&transit_mode=train")
-
-
         for (i in 0 until transportMode.size) {
-
             val requestURL = "$myAPIUrl$locationCoordinatesLat,$locationCoordinatesLong&destinations=$locationInput${transportMode[i]}&key=$myAPIKey"
-
             val volleyRequests = VolleyRequestsJava(this)
-
-
             try {
-                volleyRequests.yourFunctionForVolleyRequest({ result -> responseText.add(result.toString() + "              ") }, requestURL)
+                volleyRequests.yourFunctionForVolleyRequest({ result -> responseText.add(result.toString()) }, requestURL)
                 Thread.sleep(1000) //sleep for 3 seconds!! every requests
             } catch (e:Exception){responseText.add("ERROR HERE!")}
-
         }
 
-
-
-        Handler().postDelayed({
-//            val totalText = responseText2[0] + responseText2[1] + responseText2[2] + responseText2[3] + responseText2[4] + responseText2[5]
-            var totalText = "            "
-                        for (i in 0 until responseText.size) {
-                totalText += parseJSONObject(responseText[i]) + "                  "
-            }
-            idTextView2.text = totalText }, 2000)
-
-
+        Handler().postDelayed({parseAll()}, 2000)
 
 
 //        val spinner = idProgressBar
@@ -310,15 +293,26 @@ class MainActivity : AppCompatActivity() {
 //        val doTask = MyAsyncTask()
 //        doTask.execute()
 
-
-
-
 //        spinner.visibility = View.GONE //not showing
 
     }
-
-
-
+    var totalText = ""
+    fun parseAll(){
+        //            val totalText = responseText2[0] + responseText2[1] + responseText2[2] + responseText2[3] + responseText2[4] + responseText2[5]
+        for (i in 0 until responseText.size) {
+            var vehicleType = ""
+            when (i) {
+                0 -> vehicleType = "driving"
+                1 -> vehicleType = "walking"
+                2 -> vehicleType = "bicycling"
+                3 -> vehicleType = "bus"
+                4 -> vehicleType = "subway"
+                5 -> vehicleType = "train"
+            }
+            totalText += parseJSONObject(responseText[i]) + " when travelling by $vehicleType. "
+        }
+        idTextView2.text = totalText
+    }
 
 
     fun parseJSONObject(parseString : String) : String {
@@ -338,35 +332,15 @@ class MainActivity : AppCompatActivity() {
             val cleanDestination = cleanCode(destination)
 
             newString = "From $cleanOrigin to $cleanDestination, the distance is $distance and the duration is $duration "
-
-//            var vehicleType = ""
-//            for (i in 0 until responseText.size) {
-//                when (i) {
-//                    0 -> vehicleType = "driving"
-//                    1 -> vehicleType = "walking"
-//                    2 -> vehicleType = "bicycling"
-//                    3 -> vehicleType = "bus"
-//                    4 -> vehicleType = "subway"
-//                    5 -> vehicleType = "train"
-//                }
-//                responseText[i] += "when travelling by $vehicleType"
-//                newString = responseText[i]
-//
-//            }
-
         }catch (e:Exception){
-            return "               ZERO RESULTS              "
+            return " NULL "
         }
         return  newString
-
-
     }
-
-
 
     fun startIntent(){
         val intent = Intent(this, Page2::class.java)
-        intent.putExtra("JSONObject[]", responseText[0])
+        intent.putExtra("JSONObject[]",totalText )
 //        intent.putExtra("JSONObject[1]", afterParsingJSON[1])
 //        intent.putExtra("JSONObject[2]", afterParsingJSON[2])
 //        intent.putExtra("JSONObject[3]", afterParsingJSON[3])
