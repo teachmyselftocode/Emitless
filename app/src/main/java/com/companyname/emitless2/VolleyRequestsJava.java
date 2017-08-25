@@ -36,6 +36,7 @@ public class VolleyRequestsJava {
                     @Override
                     public void onResponse(JSONObject response) {
                         callback.onSuccess(response); // call call back function here
+                        //TODO add flag here e.g. isCompleted = true
                     }
                 }, new Response.ErrorListener() {
 

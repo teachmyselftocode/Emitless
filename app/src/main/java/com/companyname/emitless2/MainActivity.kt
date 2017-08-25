@@ -15,12 +15,14 @@ import android.os.Handler
 import android.support.v4.app.ActivityCompat
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.Toast
 import com.android.volley.*
 import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONObject
 import com.android.volley.RequestQueue
 import com.android.volley.toolbox.*
+import kotlinx.android.synthetic.main.activity_page2.*
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -35,11 +37,206 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         //Checks permission once for the at the beginning only.
         checkPermission()
+        idInputOrigin.visibility = View.INVISIBLE
+    }
+
+
+//THIS CODE IS TO SORT VOLLEY REQUESTS
+
+    fun buShowInput(view: View){
+        try{
+        idInputOrigin.visibility = View.VISIBLE
+            Thread.sleep(500)
+        } catch (e:Exception){}
+
+    }
+    var responseText = ArrayList<String>()
+    var isClear = false
+    fun buGo(view:View){
+        if (isClear){
+//            idTextView2.text = ""
+            responseText.clear()
+            totalText= ""
+        }
+        isClear = false
+        val locationDestination = idInputDestination.text.toString()
+        var locationOrigin: String
+        if(idInputOrigin.text.isBlank()){
+            locationOrigin = "${currentLocation!!.latitude},${currentLocation!!.longitude}"
+
+        }
+        else{
+            locationOrigin = idInputOrigin.text.toString()
+        }
+//        val locationCoordinatesLong = currentLocation!!.longitude
+//        val locationCoordinatesLat = currentLocation!!.latitude
+        val myAPIUrl = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins="
+        val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
+        val transportMode = arrayListOf("&mode=driving", "&mode=walking", "&mode=bicycling",
+                "&mode=transit&transit_mode=bus", "&mode=transit&transit_mode=subway", "&mode=transit&transit_mode=train")
+        for (i in 0 until transportMode.size) {
+//            val requestURL = "$myAPIUrl$locationCoordinatesLat,$locationCoordinatesLong&destinations=$locationDestination${transportMode[i]}&key=$myAPIKey"
+            val requestURL = "$myAPIUrl$locationOrigin&destinations=$locationDestination${transportMode[i]}&key=$myAPIKey"
+
+            val volleyRequests = VolleyRequestsJava(this)
+            //TODO add the if(isCompleted) flag here and use while instead of for? delete try?
+            try {
+                volleyRequests.yourFunctionForVolleyRequest({ result -> responseText.add(result.toString()) }, requestURL)
+                Thread.sleep(2000) //sleep for 3 seconds!! every requests
+            } catch (e:Exception){responseText.add("ERROR HERE!")}
+        }
+
+        Handler().postDelayed({parseAll()
+                                isClear = true}, 2000)
+
+
+//        val spinner = idProgressBar
+//        spinner.visibility = View.VISIBLE //not showing
+
+        // Instantiate AsyncTask
+//        val doTask = MyAsyncTask()
+//        doTask.execute()
+
+//        spinner.visibility = View.GONE //not showing
+
+    }
+    var totalText = ""
+    fun parseAll(){
+        
+        //            val totalText = responseText2[0] + responseText2[1] + responseText2[2] + responseText2[3] + responseText2[4] + responseText2[5]
+        for (i in 0 until responseText.size) {
+            var vehicleType = ""
+            when (i) {
+                0 -> vehicleType = "driving"
+                1 -> vehicleType = "walking"
+                2 -> vehicleType = "bicycling"
+                3 -> vehicleType = "bus"
+                4 -> vehicleType = "subway"
+                5 -> vehicleType = "train"
+            }
+            totalText += parseJSONObject(responseText[i]) + " when travelling by $vehicleType. "
+        }
+//        idTextView2.text = totalText
+        startIntent()
+    }
+
+
+    fun parseJSONObject(parseString : String) : String {
+        var newString = ""
+        try {
+            val mainObject: JSONObject = JSONObject(parseString) //change to i when for loop is used
+                    .getJSONArray("rows")
+                    .getJSONObject(0)
+                    .getJSONArray("elements")
+                    .getJSONObject(0)
+            val distance = mainObject.getJSONObject("distance").get("text").toString()
+            val duration = mainObject.getJSONObject("duration").get("text").toString()
+
+            val origin = JSONObject(parseString).get("origin_addresses").toString()
+            val destination = JSONObject(parseString).get("destination_addresses").toString()
+            val cleanOrigin = cleanCode(origin)
+            val cleanDestination = cleanCode(destination)
+
+            newString = "From $cleanOrigin to $cleanDestination, the distance is $distance and the duration is $duration "
+        }catch (e:Exception){
+            return " NULL "
+        }
+        return  newString
+    }
+
+    fun startIntent(){
+        val intent = Intent(this, Page2::class.java)
+        intent.putExtra("totalText",totalText )
+        startActivity(intent)
+    }
+
+    //Function to clean code for origins and destinations
+    fun cleanCode(str: String): String {
+        val stringAppender = StringBuilder()
+        for (a in 0 until str.length) {
+            if (str[a] != '[' && str[a] != ']' && str[a] != '"') {
+                stringAppender.append(str[a])
+            }
+        }
+        return stringAppender.toString()
     }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//THIS CODE USES ASYNCTASK BUT FAILED TO SORT OUT THE RESPONSE
+
+    val myRequestCode = 123
+    fun checkPermission(){
+
+        if(Build.VERSION.SDK_INT>=23){
+            if(ActivityCompat.checkSelfPermission(this,android.Manifest.permission.
+                    ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
+                val permissionArray = arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                requestPermissions(permissionArray,myRequestCode)
+                return
+            }
+        }
+        getUserLocation()
+    }
+
+    //Mandatory code
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        when (requestCode) {
+            myRequestCode -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    getUserLocation()
+                } else {
+                    Toast.makeText(this, "User location access not granted", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+
+    fun getUserLocation(){
+
+        Toast.makeText(this, "User location access granted", Toast.LENGTH_LONG).show()
+
+
+        val locationListener = MyLocationListener()
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3 , 3f, locationListener) // for emulator
+//        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000 , 0f, locationListener) // for PHone
+//        locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER,locationListener,null)     //Does this save battery? for Phone
+    }
+
+
+    var currentLocation: Location? = null
+    inner class MyLocationListener: LocationListener{
+
+        init {
+            currentLocation = Location("Start")
+            currentLocation!!.longitude = 0.0
+            currentLocation!!.latitude = 0.0
+        }
+        //Mandatory code
+        override fun onLocationChanged(p0: Location?) {
+            currentLocation=p0
+        }
+        override fun onStatusChanged(p0: String?, p1: Int, p2: Bundle?) {
+
+        }
+        override fun onProviderEnabled(p0: String?) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates. 
+        }
+        override fun onProviderDisabled(p0: String?) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+    }
+
+
+}
+
 /*
+OLD CODES. Not Working as desired
+
+//THIS CODE USES ASYNCTASK BUT FAILED TO SORT OUT THE RESPONSE
+
     fun showToastEnd(){
         Toast.makeText(this, "Finished", Toast.LENGTH_SHORT).show()
     }
@@ -160,10 +357,10 @@ class MainActivity : AppCompatActivity() {
         MyAsyncTask().execute(requestURLArray[0],requestURLArray[1],requestURLArray[2]
                      ,requestURLArray[3], requestURLArray[4], requestURLArray[5])
     }
-*/
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-   //THIS CODE IS USING MAP. FROM DISCORD FRIEND STILL NOT SORTING THE RESPONSE
-/*    var beforeParsingText = ArrayList<String>()
+//THIS CODE IS USING MAP. FROM DISCORD FRIEND STILL NOT SORTING THE RESPONSE
+    var beforeParsingText = ArrayList<String>()
     fun buTest(view:View){
         volleyRequests2()
 
@@ -230,7 +427,7 @@ class MainActivity : AppCompatActivity() {
             //String builder to remove unnecessary characters for origin and destination string
             val cleanOrigin = cleanCode2(origin)
             val cleanDestination = cleanCode2(destination)
-            
+
             //new code
             afterParsingJSON2[i] = "From $cleanOrigin to $cleanDestination, the distance is $distance and the duration is $duration "
             var vehicleType = ""
@@ -260,173 +457,3 @@ class MainActivity : AppCompatActivity() {
     }
 
 */
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//THIS CODE IS TO SORT VOLLEY REQUESTS
-    var responseText = ArrayList<String>()
-
-    fun buGo(view:View){
-
-        val locationInput = idInputDestination.text.toString()
-        val locationCoordinatesLong = currentLocation!!.longitude
-        val locationCoordinatesLat = currentLocation!!.latitude
-        val myAPIUrl = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins="
-        val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
-        val transportMode = arrayListOf("&mode=driving", "&mode=walking", "&mode=bicycling",
-                "&mode=transit&transit_mode=bus", "&mode=transit&transit_mode=subway", "&mode=transit&transit_mode=train")
-        for (i in 0 until transportMode.size) {
-            val requestURL = "$myAPIUrl$locationCoordinatesLat,$locationCoordinatesLong&destinations=$locationInput${transportMode[i]}&key=$myAPIKey"
-            val volleyRequests = VolleyRequestsJava(this)
-            try {
-                volleyRequests.yourFunctionForVolleyRequest({ result -> responseText.add(result.toString()) }, requestURL)
-                Thread.sleep(1000) //sleep for 3 seconds!! every requests
-            } catch (e:Exception){responseText.add("ERROR HERE!")}
-        }
-
-        Handler().postDelayed({parseAll()}, 2000)
-
-
-//        val spinner = idProgressBar
-//        spinner.visibility = View.VISIBLE //not showing
-
-        // Instantiate AsyncTask
-//        val doTask = MyAsyncTask()
-//        doTask.execute()
-
-//        spinner.visibility = View.GONE //not showing
-
-    }
-    var totalText = ""
-    fun parseAll(){
-        //            val totalText = responseText2[0] + responseText2[1] + responseText2[2] + responseText2[3] + responseText2[4] + responseText2[5]
-        for (i in 0 until responseText.size) {
-            var vehicleType = ""
-            when (i) {
-                0 -> vehicleType = "driving"
-                1 -> vehicleType = "walking"
-                2 -> vehicleType = "bicycling"
-                3 -> vehicleType = "bus"
-                4 -> vehicleType = "subway"
-                5 -> vehicleType = "train"
-            }
-            totalText += parseJSONObject(responseText[i]) + " when travelling by $vehicleType. "
-        }
-        idTextView2.text = totalText
-    }
-
-
-    fun parseJSONObject(parseString : String) : String {
-        var newString = ""
-        try {
-            val mainObject: JSONObject = JSONObject(parseString) //change to i when for loop is used
-                    .getJSONArray("rows")
-                    .getJSONObject(0)
-                    .getJSONArray("elements")
-                    .getJSONObject(0)
-            val distance = mainObject.getJSONObject("distance").get("text").toString()
-            val duration = mainObject.getJSONObject("duration").get("text").toString()
-
-            val origin = JSONObject(parseString).get("origin_addresses").toString()
-            val destination = JSONObject(parseString).get("destination_addresses").toString()
-            val cleanOrigin = cleanCode(origin)
-            val cleanDestination = cleanCode(destination)
-
-            newString = "From $cleanOrigin to $cleanDestination, the distance is $distance and the duration is $duration "
-        }catch (e:Exception){
-            return " NULL "
-        }
-        return  newString
-    }
-
-    fun startIntent(){
-        val intent = Intent(this, Page2::class.java)
-        intent.putExtra("JSONObject[]",totalText )
-//        intent.putExtra("JSONObject[1]", afterParsingJSON[1])
-//        intent.putExtra("JSONObject[2]", afterParsingJSON[2])
-//        intent.putExtra("JSONObject[3]", afterParsingJSON[3])
-//        intent.putExtra("JSONObject[4]", afterParsingJSON[4])
-//        intent.putExtra("JSONObject[5]", afterParsingJSON[5])
-        startActivity(intent)
-    }
-
-    //Function to clean code for origins and destinations
-    fun cleanCode(str: String): String {
-        val stringAppender = StringBuilder()
-        for (a in 0 until str.length) {
-            if (str[a] != '[' && str[a] != ']' && str[a] != '"') {
-                stringAppender.append(str[a])
-            }
-        }
-        return stringAppender.toString()
-    }
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    val myRequestCode = 123
-    fun checkPermission(){
-
-        if(Build.VERSION.SDK_INT>=23){
-            if(ActivityCompat.checkSelfPermission(this,android.Manifest.permission.
-                    ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
-                val permissionArray = arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                requestPermissions(permissionArray,myRequestCode)
-                return
-            }
-        }
-        getUserLocation()
-    }
-
-    //Mandatory code
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        when (requestCode) {
-            myRequestCode -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    getUserLocation()
-                } else {
-                    Toast.makeText(this, "User location access not granted", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    }
-
-
-    fun getUserLocation(){
-
-        Toast.makeText(this, "User location access granted", Toast.LENGTH_LONG).show()
-
-
-        val locationListener = MyLocationListener()
-        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3 , 3f, locationListener) // for emulator
-//        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000 , 0f, locationListener) // for PHone
-//        locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER,locationListener,null)     //Does this save battery? for Phone
-    }
-
-
-    var currentLocation: Location? = null
-    inner class MyLocationListener: LocationListener{
-
-        init {
-            currentLocation = Location("Start")
-            currentLocation!!.longitude = 0.0
-            currentLocation!!.latitude = 0.0
-        }
-        //Mandatory code
-        override fun onLocationChanged(p0: Location?) {
-            currentLocation=p0
-        }
-        override fun onStatusChanged(p0: String?, p1: Int, p2: Bundle?) {
-            TODO("not implemented, Have to know what is happening inside!") //To change body of created functions use File | Settings | File Templates.
-        }
-        override fun onProviderEnabled(p0: String?) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates. 
-        }
-        override fun onProviderDisabled(p0: String?) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-    }
-
-
-}
