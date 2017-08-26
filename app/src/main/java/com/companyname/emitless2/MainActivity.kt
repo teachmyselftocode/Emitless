@@ -1,42 +1,29 @@
 package com.companyname.emitless2
 
-import android.annotation.SuppressLint
-import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
-import android.os.AsyncTask
 import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.ActivityCompat
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
-import android.widget.Button
 import android.widget.Toast
-import com.android.volley.*
 import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONObject
-import com.android.volley.RequestQueue
-import com.android.volley.toolbox.*
-import kotlinx.android.synthetic.main.activity_grid.*
-import kotlinx.android.synthetic.main.activity_page2.*
 import kotlinx.android.synthetic.main.activity_ticket.view.*
-import java.io.BufferedReader
-import java.io.InputStream
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
 
 
 class MainActivity : AppCompatActivity() {
+
+    private var isOriginShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,29 +31,38 @@ class MainActivity : AppCompatActivity() {
         //Checks permission once for the at the beginning only.
         checkPermission()
         idInputOrigin.visibility = View.INVISIBLE
+        idbuGoogleMapButton2.text = "Use your own location?"
+
     }
 
-
-//THIS CODE IS TO SORT VOLLEY REQUESTS
-
-    fun buShowInput(view: View){
-        try{
-        idInputOrigin.visibility = View.VISIBLE
-            Thread.sleep(500)
-        } catch (e:Exception){}
-
+    //Code to toggle Origin Input
+    fun buShowOriginInput(view: View){
+        if(!isOriginShown) {
+            try {
+                idInputOrigin.visibility = View.VISIBLE
+                Thread.sleep(100)
+            } catch (e: Exception) {}
+            idbuGoogleMapButton2.text = "Destination input only"
+            isOriginShown = true
+        } else {
+            try {
+                idInputOrigin.visibility = View.INVISIBLE
+                Thread.sleep(100)
+            } catch (e: Exception) {}
+            idbuGoogleMapButton2.text = "Use your own location?"
+            isOriginShown = false
+        }
     }
 
     private var responseText = ArrayList<String>()
-    private var isClear = false
+    private var isOriginClear = false
 
     fun buGo(view:View){
-        if (isClear){
-//            idTextView2.text = ""
+        if (isOriginClear){
             responseText.clear()
             totalText= ""
         }
-        isClear = false
+        isOriginClear = false
         val locationDestination = idInputDestination.text.toString()
         var locationOrigin: String
         if(idInputOrigin.text.isBlank()){
@@ -96,7 +92,7 @@ class MainActivity : AppCompatActivity() {
 
         Handler().postDelayed({parseAll()
                                 //Insert Base Adapter here or insert in start intent function?
-                                isClear = true}, 2000)
+                                }, 2000)
 
 
 //        val spinner = idProgressBar
@@ -110,9 +106,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    fun buTest(view: View){
-        loadTransportList(listOfDistance,listOfDuration)
-    }
 
     private var totalText = ""
     fun parseAll(){
@@ -128,6 +121,7 @@ class MainActivity : AppCompatActivity() {
                 4 -> vehicleType = "train"
             }
             totalText += parseJSONObject(responseText[i]) + " when travelling by $vehicleType. "
+
         }
 
 //        var newText = " "
@@ -137,12 +131,18 @@ class MainActivity : AppCompatActivity() {
         listOfDuration.forEach { totalText+= "  " + it }
 
 //        idTextView2.text = totalText
-        startIntent()
+        Handler().postDelayed({
+            startIntent()
+            isOriginClear = true
+            totalText=""
+            listOfDistance.clear()
+            listOfDuration.clear()}, 2000)
     }
 
     private val listOfDistance = ArrayList<String>()
     private val listOfDuration = ArrayList<String>()
-
+    private var originGlobal : String = ""
+    private var destinationGlobal : String = ""
     fun parseJSONObject(parseString : String) : String {
         var newString = ""
         try {
@@ -160,6 +160,9 @@ class MainActivity : AppCompatActivity() {
             val destination = JSONObject(parseString).get("destination_addresses").toString()
             val cleanOrigin = cleanCode(origin)
             val cleanDestination = cleanCode(destination)
+            originGlobal = cleanOrigin
+            destinationGlobal = cleanDestination
+
 
             newString = "From $cleanOrigin to $cleanDestination, the distance is $distance and the duration is $duration "
         }catch (e:Exception){
@@ -173,6 +176,9 @@ class MainActivity : AppCompatActivity() {
         intent.putExtra("totalText",totalText )
         intent.putExtra("listOfDistance",listOfDistance )
         intent.putExtra("listOfDuration",listOfDuration )
+        intent.putExtra("originGlobal",originGlobal )
+        intent.putExtra("destinationGlobal",destinationGlobal )
+
         startActivity(intent)
     }
 
@@ -188,26 +194,35 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    fun loadTransportList(listOfDistance : ArrayList<String>, listOfDuration : ArrayList<String>){
+    fun loadTransportList(listOfDistance : ArrayList<String>, listOfDuration : ArrayList<String>) : ArrayList<TransportModes>{
 
         val listOfTransport = ArrayList<TransportModes>()
-        listOfTransport.add(TransportModes("Car",R.drawable.car,listOfDistance[0],listOfDuration[0],"14 CO2 Eq."))
-        listOfTransport.add(TransportModes("Walking",R.drawable.walking,listOfDistance[1],listOfDuration[2],"2 CO2 Eq."))
-        listOfTransport.add(TransportModes("Bus",R.drawable.bus,listOfDistance[2],listOfDuration[2],"13 CO2 Eq."))
-        listOfTransport.add(TransportModes("Subway",R.drawable.subway,listOfDistance[3],listOfDuration[3],"9 CO2 Eq."))
-        listOfTransport.add(TransportModes("Train",R.drawable.train,listOfDistance[4],listOfDuration[4],"15 CO2 Eq."))
+        listOfTransport.add(TransportModes("Car",R.drawable.car,"Distance : " + listOfDistance[0],"Duration : " +listOfDuration[0],"Carbon Emission: 14 CO2 Eq."))
+        listOfTransport.add(TransportModes("Walking",R.drawable.walking,"Distance : " + listOfDistance[1],"Duration : " +listOfDuration[1],"Carbon Emission: 2 CO2 Eq."))
+        listOfTransport.add(TransportModes("Bus",R.drawable.bus,"Distance : " + listOfDistance[2],"Duration : " +listOfDuration[2],"Carbon Emission: 13 CO2 Eq."))
+        listOfTransport.add(TransportModes("Subway",R.drawable.subway,"Distance : " + listOfDistance[3],"Duration : " +listOfDuration[3],"Carbon Emission: 9 CO2 Eq."))
+        listOfTransport.add(TransportModes("Train",R.drawable.train,"Distance : " + listOfDistance[4],"Duration : " +listOfDuration[4],"Carbon Emission: 15 CO2 Eq."))
+        return listOfTransport
 
-        val transportAdapter = TransportAdapter(listOfTransport,this)
-        gridView.adapter = transportAdapter
 
     }
 
 
-    class TransportAdapter(private val listOfTransportLocal : ArrayList<TransportModes>, private val context : Context) : BaseAdapter(){
+     class TransportAdapter : BaseAdapter{
+        private var listOfTransportLocal = ArrayList<TransportModes>() // local array. Why set it to another local?
+        private var context : Context? = null
+
+        constructor(listOfAnimals : ArrayList<TransportModes>, mContext : Context):super(){
+            this.listOfTransportLocal= listOfAnimals //set the data to a local array
+            this.context = mContext
+        }
+
+
 
         override fun getView(p0: Int, p1: View?, p2: ViewGroup?): View {
+
             val transport = listOfTransportLocal[p0]
-            val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+            val inflater = context!!.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
             val transportView = inflater.inflate(R.layout.activity_ticket, null)
             transportView.ticketTransportType.text = transport.transportType
             transportView.ticketImage.setImageResource(transport.image)

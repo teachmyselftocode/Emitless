@@ -20,6 +20,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".Page2" />
+        <activity android:name=".GridayoutActivity"></activity>
     </application>
 
 </manifest>

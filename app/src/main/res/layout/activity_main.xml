@@ -32,6 +32,7 @@
         android:background="@android:color/darker_gray"
         android:onClick="buTest2"
         android:text="Asynctask"
+        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -44,6 +45,7 @@
         android:background="@android:color/darker_gray"
         android:onClick="buTest"
         android:text="Test"
+        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -97,7 +99,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="376dp"
         android:background="@color/colorGreen2"
-        android:onClick="buShowInput"
+        android:onClick="buShowOriginInput"
         android:text="Want to use your own origin?"
         android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"

@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.content.Intent
 import kotlinx.android.synthetic.main.activity_page2.*
 import android.view.View
+import com.companyname.emitless2.MainActivity.TransportAdapter
+import kotlinx.android.synthetic.main.activity_gridayout.*
 import org.json.JSONObject
 
 
@@ -16,13 +18,8 @@ class Page2 : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_page2)
 
-        val message0 = intent.getStringExtra("totalText")
-
-
-
-        // Capture the layout's TextView and set the string as its text
-//        idPrintText.text = message0 + message1 + message2 + message3 + message4 + message5
-        idPrintText.text = message0
+        val totalText = intent.getStringExtra("totalText")
+        idPrintText.text = totalText
 
     }
 
@@ -30,13 +27,25 @@ class Page2 : AppCompatActivity() {
     fun buTest3(view: View){
         val arrayDistance= intent.getStringArrayListExtra("listOfDistance")
         val arrayDuration= intent.getStringArrayListExtra("listOfDuration")
-//        (arrayDistance,arrayDuration)
-        val mainActivity = MainActivity()
-        mainActivity.loadTransportList(arrayDistance,arrayDuration)
+        val originGlobal = intent.getStringExtra("originGlobal")
+        val destinationGlobal = intent.getStringExtra("destinationGlobal")
+
+
+
+        val intent = Intent(this, GridayoutActivity::class.java)
+        intent.putExtra("arrayDistance",arrayDistance )
+        intent.putExtra("arrayDuration",arrayDuration )
+        intent.putExtra("originGlobal",originGlobal )
+        intent.putExtra("destinationGlobal",destinationGlobal )
+        startActivity(intent)
+        }
+
+        //TODO change to another class
+
     }
 
 //    }
 
 
 
-}
+

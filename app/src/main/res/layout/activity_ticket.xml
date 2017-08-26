@@ -7,18 +7,19 @@
     android:orientation="vertical">
 
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:orientation="vertical">
 
         <ImageView
             android:id="@+id/ticketImage"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:srcCompat="@drawable/car" />
+            android:layout_width="64pt"
+            android:layout_height="64pt"
+            android:layout_gravity="center"
+            app:srcCompat="@drawable/biking" />
 
         <TextView
-            android:id="@+id/ticketTrasport"
+            android:id="@+id/ticketTransportType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Car"
@@ -28,24 +29,27 @@
 
         <TextView
             android:id="@+id/ticketDistance"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Distance:"
-            android:textAlignment="viewStart" />
+            android:textAlignment="viewStart"
+            android:textSize="18sp" />
 
         <TextView
-            android:id="@+id/ticketTime"
-            android:layout_width="match_parent"
+            android:id="@+id/ticketDuration"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Time:"
-            android:textAlignment="viewStart" />
+            android:textAlignment="viewStart"
+            android:textSize="18sp" />
 
         <TextView
             android:id="@+id/ticketCarbon"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="CO2 Emissions:"
-            android:textAlignment="viewStart" />
+            android:textAlignment="viewStart"
+            android:textSize="18sp" />
 
     </LinearLayout>
 </LinearLayout>
