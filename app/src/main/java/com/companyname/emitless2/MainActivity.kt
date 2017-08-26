@@ -1,6 +1,7 @@
 package com.companyname.emitless2
 
 import android.annotation.SuppressLint
+import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -14,7 +15,10 @@ import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.ActivityCompat
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.widget.BaseAdapter
 import android.widget.Button
 import android.widget.Toast
 import com.android.volley.*
@@ -22,7 +26,9 @@ import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONObject
 import com.android.volley.RequestQueue
 import com.android.volley.toolbox.*
+import kotlinx.android.synthetic.main.activity_grid.*
 import kotlinx.android.synthetic.main.activity_page2.*
+import kotlinx.android.synthetic.main.activity_ticket.view.*
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -50,8 +56,10 @@ class MainActivity : AppCompatActivity() {
         } catch (e:Exception){}
 
     }
-    var responseText = ArrayList<String>()
-    var isClear = false
+
+    private var responseText = ArrayList<String>()
+    private var isClear = false
+
     fun buGo(view:View){
         if (isClear){
 //            idTextView2.text = ""
@@ -72,7 +80,7 @@ class MainActivity : AppCompatActivity() {
 //        val locationCoordinatesLat = currentLocation!!.latitude
         val myAPIUrl = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins="
         val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
-        val transportMode = arrayListOf("&mode=driving", "&mode=walking", "&mode=bicycling",
+        val transportMode = arrayListOf("&mode=driving", "&mode=walking",
                 "&mode=transit&transit_mode=bus", "&mode=transit&transit_mode=subway", "&mode=transit&transit_mode=train")
         for (i in 0 until transportMode.size) {
 //            val requestURL = "$myAPIUrl$locationCoordinatesLat,$locationCoordinatesLong&destinations=$locationDestination${transportMode[i]}&key=$myAPIKey"
@@ -87,6 +95,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         Handler().postDelayed({parseAll()
+                                //Insert Base Adapter here or insert in start intent function?
                                 isClear = true}, 2000)
 
 
@@ -100,26 +109,39 @@ class MainActivity : AppCompatActivity() {
 //        spinner.visibility = View.GONE //not showing
 
     }
-    var totalText = ""
+
+    fun buTest(view: View){
+        loadTransportList(listOfDistance,listOfDuration)
+    }
+
+    private var totalText = ""
     fun parseAll(){
         
         //            val totalText = responseText2[0] + responseText2[1] + responseText2[2] + responseText2[3] + responseText2[4] + responseText2[5]
         for (i in 0 until responseText.size) {
             var vehicleType = ""
             when (i) {
-                0 -> vehicleType = "driving"
+                0 -> vehicleType = "car"
                 1 -> vehicleType = "walking"
-                2 -> vehicleType = "bicycling"
-                3 -> vehicleType = "bus"
-                4 -> vehicleType = "subway"
-                5 -> vehicleType = "train"
+                2 -> vehicleType = "bus"
+                3 -> vehicleType = "subway"
+                4 -> vehicleType = "train"
             }
             totalText += parseJSONObject(responseText[i]) + " when travelling by $vehicleType. "
         }
+
+//        var newText = " "
+//        listOfDistance.forEach { newText+it }
+//        listOfDuration.forEach { newText+it }
+        listOfDistance.forEach { totalText+= "  " + it }
+        listOfDuration.forEach { totalText+= "  " + it }
+
 //        idTextView2.text = totalText
         startIntent()
     }
 
+    private val listOfDistance = ArrayList<String>()
+    private val listOfDuration = ArrayList<String>()
 
     fun parseJSONObject(parseString : String) : String {
         var newString = ""
@@ -131,6 +153,8 @@ class MainActivity : AppCompatActivity() {
                     .getJSONObject(0)
             val distance = mainObject.getJSONObject("distance").get("text").toString()
             val duration = mainObject.getJSONObject("duration").get("text").toString()
+            listOfDistance.add(distance)
+            listOfDuration.add(duration)
 
             val origin = JSONObject(parseString).get("origin_addresses").toString()
             val destination = JSONObject(parseString).get("destination_addresses").toString()
@@ -147,6 +171,8 @@ class MainActivity : AppCompatActivity() {
     fun startIntent(){
         val intent = Intent(this, Page2::class.java)
         intent.putExtra("totalText",totalText )
+        intent.putExtra("listOfDistance",listOfDistance )
+        intent.putExtra("listOfDuration",listOfDuration )
         startActivity(intent)
     }
 
@@ -160,6 +186,51 @@ class MainActivity : AppCompatActivity() {
         }
         return stringAppender.toString()
     }
+
+
+    fun loadTransportList(listOfDistance : ArrayList<String>, listOfDuration : ArrayList<String>){
+
+        val listOfTransport = ArrayList<TransportModes>()
+        listOfTransport.add(TransportModes("Car",R.drawable.car,listOfDistance[0],listOfDuration[0],"14 CO2 Eq."))
+        listOfTransport.add(TransportModes("Walking",R.drawable.walking,listOfDistance[1],listOfDuration[2],"2 CO2 Eq."))
+        listOfTransport.add(TransportModes("Bus",R.drawable.bus,listOfDistance[2],listOfDuration[2],"13 CO2 Eq."))
+        listOfTransport.add(TransportModes("Subway",R.drawable.subway,listOfDistance[3],listOfDuration[3],"9 CO2 Eq."))
+        listOfTransport.add(TransportModes("Train",R.drawable.train,listOfDistance[4],listOfDuration[4],"15 CO2 Eq."))
+
+        val transportAdapter = TransportAdapter(listOfTransport,this)
+        gridView.adapter = transportAdapter
+
+    }
+
+
+    class TransportAdapter(private val listOfTransportLocal : ArrayList<TransportModes>, private val context : Context) : BaseAdapter(){
+
+        override fun getView(p0: Int, p1: View?, p2: ViewGroup?): View {
+            val transport = listOfTransportLocal[p0]
+            val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+            val transportView = inflater.inflate(R.layout.activity_ticket, null)
+            transportView.ticketTransportType.text = transport.transportType
+            transportView.ticketImage.setImageResource(transport.image)
+            transportView.ticketDistance.text = transport.distance
+            transportView.ticketDuration.text = transport.duration
+            transportView.ticketCarbon.text = transport.carbonEmission
+            return transportView
+
+        }
+
+        override fun getItem(p0: Int): Any {
+            return listOfTransportLocal[p0]
+        }
+
+        override fun getItemId(p0: Int): Long {
+            return p0.toLong()
+        }
+
+        override fun getCount(): Int {
+            return listOfTransportLocal.size
+        }
+    }
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
