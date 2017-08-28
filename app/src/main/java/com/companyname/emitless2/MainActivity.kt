@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.AsyncTask
 import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -31,7 +32,9 @@ class MainActivity : AppCompatActivity() {
         //Checks permission once for the at the beginning only.
         checkPermission()
         idInputOrigin.visibility = View.INVISIBLE
+        idProgressBar.visibility = View.INVISIBLE
         idbuGoogleMapButton2.text = "Use your own location?"
+
 
     }
 
@@ -54,10 +57,41 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun showToastEnd(){
+        Toast.makeText(this, "Finished", Toast.LENGTH_SHORT).show()
+    }
+    fun showToastStart(){
+        Toast.makeText(this, "Start", Toast.LENGTH_SHORT).show()
+    }
+
+    inner class MyAsyncTask : AsyncTask<String,String,String>(){
+
+        val spinner = idProgressBar
+        override fun onPreExecute() {
+            showToastStart()
+            spinner.visibility = View.VISIBLE //not showing
+        }
+        override fun doInBackground(vararg p0: String?): String? { //Cannot access to UI from this block
+            Start()
+            return null
+        }
+
+        override fun onProgressUpdate(vararg values: String?) {
+        }
+
+        override fun onPostExecute(result: String?) {
+            spinner.visibility = View.GONE //not showing
+            showToastEnd()
+        }
+    }
     private var responseText = ArrayList<String>()
     private var isOriginClear = false
 
-    fun buGo(view:View){
+    fun buGo(view: View){
+        val doTask = MyAsyncTask()
+        doTask.execute()
+    }
+    fun Start(){
         if (isOriginClear){
             responseText.clear()
             totalText= ""
@@ -90,19 +124,10 @@ class MainActivity : AppCompatActivity() {
             } catch (e:Exception){responseText.add("ERROR HERE!")}
         }
 
-        Handler().postDelayed({parseAll()
-                                //Insert Base Adapter here or insert in start intent function?
-                                }, 2000)
-
-
-//        val spinner = idProgressBar
-//        spinner.visibility = View.VISIBLE //not showing
-
-        // Instantiate AsyncTask
-//        val doTask = MyAsyncTask()
-//        doTask.execute()
-
-//        spinner.visibility = View.GONE //not showing
+//        Handler().postDelayed({parseAll()
+//                                //Insert Base Adapter here or insert in start intent function?
+//                                }, 2000)
+        parseAll()
 
     }
 
@@ -131,12 +156,13 @@ class MainActivity : AppCompatActivity() {
         listOfDuration.forEach { totalText+= "  " + it }
 
 //        idTextView2.text = totalText
-        Handler().postDelayed({
+//        Handler().postDelayed({
             startIntent()
             isOriginClear = true
             totalText=""
             listOfDistance.clear()
-            listOfDuration.clear()}, 2000)
+        listOfDuration.clear()
+//            listOfDuration.clear()}, 2000)
     }
 
     private val listOfDistance = ArrayList<String>()
