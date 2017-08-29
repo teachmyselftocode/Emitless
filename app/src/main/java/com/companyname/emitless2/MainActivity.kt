@@ -10,49 +10,78 @@ import android.os.AsyncTask
 import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Handler
 import android.support.v4.app.ActivityCompat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.Toast
+import com.google.android.gms.common.api.Status
 import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONObject
 import kotlinx.android.synthetic.main.activity_ticket.view.*
+import com.google.android.gms.location.places.Place
+import com.google.android.gms.location.places.ui.PlaceSelectionListener
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment
 
 
 class MainActivity : AppCompatActivity() {
 
-    private var isOriginShown = false
+    private var isOriginShown : Boolean = false
+    var originPlaceID: String = ""
+    var destinationPlaceID: String = ""
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         //Checks permission once for the at the beginning only.
         checkPermission()
-        idInputOrigin.visibility = View.INVISIBLE
-        idProgressBar.visibility = View.INVISIBLE
-        idbuGoogleMapButton2.text = "Use your own location?"
 
+        //Origin Fragment
+        val autocompleteFragment = fragmentManager.findFragmentById(R.id.place_autocomplete_fragment) as PlaceAutocompleteFragment
 
+        autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                originPlaceID = place.id
+//                Log.i(FragmentActivity.TAG, "Place: " + place.name)
+            }
+
+            override fun onError(status: Status) {
+//                Log.i(FragmentActivity.TAG, "An error occurred: " + status)
+            }
+        })
+
+        //Destination Fragment
+        val autocompleteFragment2 = fragmentManager.findFragmentById(R.id.place_autocomplete_fragment2) as PlaceAutocompleteFragment
+
+        autocompleteFragment2.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                destinationPlaceID = place.id
+//                Log.i(FragmentActivity.TAG, "Place: " + place.name)
+            }
+
+            override fun onError(status: Status) {
+//                Log.i(FragmentActivity.TAG, "An error occurred: " + status)
+            }
+        })
     }
 
     //Code to toggle Origin Input
-    fun buShowOriginInput(view: View){
+    fun buShowOriginLayout(view: View){
         if(!isOriginShown) {
             try {
-                idInputOrigin.visibility = View.VISIBLE
+                idOriginLayout.visibility = View.VISIBLE
                 Thread.sleep(100)
             } catch (e: Exception) {}
-            idbuGoogleMapButton2.text = "Destination input only"
+            idBuOriginToggle.text = "Use Current Location"
             isOriginShown = true
         } else {
             try {
-                idInputOrigin.visibility = View.INVISIBLE
+                idOriginLayout.visibility = View.GONE
                 Thread.sleep(100)
             } catch (e: Exception) {}
-            idbuGoogleMapButton2.text = "Use your own location?"
+            idBuOriginToggle.text = "Input Origin"
             isOriginShown = false
         }
     }
@@ -66,10 +95,10 @@ class MainActivity : AppCompatActivity() {
 
     inner class MyAsyncTask : AsyncTask<String,String,String>(){
 
-        val spinner = idProgressBar
+        private val progressBar = idProgressBar
         override fun onPreExecute() {
             showToastStart()
-            spinner.visibility = View.VISIBLE //not showing
+            progressBar.visibility = View.VISIBLE //not showing
         }
         override fun doInBackground(vararg p0: String?): String? { //Cannot access to UI from this block
             Start()
@@ -80,10 +109,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onPostExecute(result: String?) {
-            spinner.visibility = View.GONE //not showing
+            progressBar.visibility = View.GONE //not showing
             showToastEnd()
         }
     }
+
     private var responseText = ArrayList<String>()
     private var isOriginClear = false
 
@@ -96,20 +126,21 @@ class MainActivity : AppCompatActivity() {
             responseText.clear()
             totalText= ""
         }
-        isOriginClear = false
-        val locationDestination = idInputDestination.text.toString()
+//        val locationDestination = idInputDestination.text.toString()
+        val locationDestination = "place_id:$destinationPlaceID"
         var locationOrigin: String
-        if(idInputOrigin.text.isBlank()){
+//        if(idInputOrigin.text.isBlank()){
+//            locationOrigin = "${currentLocation!!.latitude},${currentLocation!!.longitude}"
+//        else{
+//            locationOrigin = idInputOrigin.text.toString()
+//        }
+        if (isOriginShown){
+            locationOrigin = "place_id:$originPlaceID"
+        } else {
             locationOrigin = "${currentLocation!!.latitude},${currentLocation!!.longitude}"
-
         }
-        else{
-            locationOrigin = idInputOrigin.text.toString()
-        }
-//        val locationCoordinatesLong = currentLocation!!.longitude
-//        val locationCoordinatesLat = currentLocation!!.latitude
         val myAPIUrl = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins="
-        val myAPIKey = "AIzaSyAcGKihEcRIKWOQ-SNEhgAOG6uL5C1bcdQ"
+        val myAPIKey = "AIzaSyCjwCoN0Cqg3gK14wORXOgdee-WpigZWow"
         val transportMode = arrayListOf("&mode=driving", "&mode=walking",
                 "&mode=transit&transit_mode=bus", "&mode=transit&transit_mode=subway", "&mode=transit&transit_mode=train")
         for (i in 0 until transportMode.size) {
@@ -179,7 +210,7 @@ class MainActivity : AppCompatActivity() {
                     .getJSONObject(0)
             val distance = mainObject.getJSONObject("distance").get("text").toString()
             val duration = mainObject.getJSONObject("duration").get("text").toString()
-            listOfDistance.add(distance)
+            listOfDistance.add(cleanCodeDistance(distance))
             listOfDuration.add(duration)
 
             val origin = JSONObject(parseString).get("origin_addresses").toString()
@@ -219,15 +250,29 @@ class MainActivity : AppCompatActivity() {
         return stringAppender.toString()
     }
 
+    fun cleanCodeDistance(str: String): String {
+        val stringAppender = StringBuilder()
+        for (a in 0 until str.length) {
+            if (str[a] != 'k' && str[a] != 'm') {
+                stringAppender.append(str[a])
+            }
+        }
+        return stringAppender.toString().replace(" ","")
+    }
+
 
     fun loadTransportList(listOfDistance : ArrayList<String>, listOfDuration : ArrayList<String>) : ArrayList<TransportModes>{
 
         val listOfTransport = ArrayList<TransportModes>()
-        listOfTransport.add(TransportModes("Car",R.drawable.car,"Distance : " + listOfDistance[0],"Duration : " +listOfDuration[0],"Carbon Emission: 14 CO2 Eq."))
-        listOfTransport.add(TransportModes("Walking",R.drawable.walking,"Distance : " + listOfDistance[1],"Duration : " +listOfDuration[1],"Carbon Emission: 2 CO2 Eq."))
-        listOfTransport.add(TransportModes("Bus",R.drawable.bus,"Distance : " + listOfDistance[2],"Duration : " +listOfDuration[2],"Carbon Emission: 13 CO2 Eq."))
-        listOfTransport.add(TransportModes("Subway",R.drawable.subway,"Distance : " + listOfDistance[3],"Duration : " +listOfDuration[3],"Carbon Emission: 9 CO2 Eq."))
-        listOfTransport.add(TransportModes("Train",R.drawable.train,"Distance : " + listOfDistance[4],"Duration : " +listOfDuration[4],"Carbon Emission: 15 CO2 Eq."))
+        listOfTransport.add(TransportModes("Car",R.drawable.car,"Distance : ${listOfDistance[0]}km","Duration : " +listOfDuration[0],"CO2: ${listOfDistance[0].toDouble() *0.3416} kg CO2-Eq"))
+        listOfTransport.add(TransportModes("Electric Car",R.drawable.ecar,"Distance : ${listOfDistance[0]}km","Duration : " +listOfDuration[0],"CO2: ${listOfDistance[0].toDouble() *0.2425} kg CO2-Eq"))
+        listOfTransport.add(TransportModes("Motor Scooter",R.drawable.motor,"Distance : ${listOfDistance[0]}km","Duration : " +listOfDuration[0],"CO2: ${listOfDistance[0].toDouble() *0.1473} kg CO2-Eq"))
+        listOfTransport.add(TransportModes("Electric Scooter",R.drawable.escooter,"Distance : ${listOfDistance[0]}km","Duration : " +listOfDuration[0],"CO2: ${listOfDistance[0].toDouble() *0.05515} kg CO2-Eq"))
+        listOfTransport.add(TransportModes("Walking",R.drawable.walking,"Distance : ${listOfDistance[1]}km","Duration : " +listOfDuration[1],"CO2: ${listOfDistance[1].toDouble() *0} kg CO2-Eq"))
+        listOfTransport.add(TransportModes("Coach",R.drawable.coach,"Distance : ${listOfDistance[2]}km","Duration : " +listOfDuration[2],"CCO2: ${listOfDistance[2].toDouble() *0.05516} kg CO2-Eq"))
+        listOfTransport.add(TransportModes("Bus",R.drawable.bus,"Distance : ${listOfDistance[2]}km","Duration : " +listOfDuration[2],"CO2: ${listOfDistance[2].toDouble() *0.1093} kg CO2-Eq"))
+        listOfTransport.add(TransportModes("Subway",R.drawable.subway,"Distance : ${listOfDistance[3]}km","Duration : " +listOfDuration[3],"CO2: ${listOfDistance[3].toDouble() *0.07691} kg CO2-Eq"))
+        listOfTransport.add(TransportModes("Train",R.drawable.train,"Distance : ${listOfDistance[4]}km","Duration : " +listOfDuration[4],"CO2: ${listOfDistance[4].toDouble() *0.07464} kg CO2-Eq"))
         return listOfTransport
 
 
@@ -472,29 +517,6 @@ OLD CODES. Not Working as desired
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //THIS CODE IS USING MAP. FROM DISCORD FRIEND STILL NOT SORTING THE RESPONSE
-    var beforeParsingText = ArrayList<String>()
-    fun buTest(view:View){
-        volleyRequests2()
-
-        var totalText =""
-        for (i in 0 until responses.size){
-//            beforeParsingText.add(responses[i].toString())
-            totalText += responses[i] //for printing and testing the responses only
-            }
-
-//        parseJSONObject2()
-        fun startIntent(){
-            val intent = Intent(this, Page2::class.java)
-            intent.putExtra("JSONObject", totalText)
-
-            startActivity(intent)
-        }
-
-//        Handler().postDelayed({idTextView2.text= afterParsingJSON2[0]}, 2000)
-        Handler().postDelayed({idTextView2.text= totalText}, 5000)
-//        Handler().postDelayed({startIntent()}, 5000)
-
-    }
 
     val responses = mutableListOf<String>()
 
@@ -518,54 +540,5 @@ OLD CODES. Not Working as desired
                 }.forEach { queue.add(it) }
     }
 
-    //    var afterParsingJSON : String = ""
-    var afterParsingJSON2 = arrayListOf<String>()
-    fun parseJSONObject2() {
-
-        for (i in 0 until 5) {
-            val mainObject: JSONObject = JSONObject(beforeParsingText[i]) //change to i when for loop is used
-                    .getJSONArray("rows")
-                    .getJSONObject(0)
-                    .getJSONArray("elements")
-                    .getJSONObject(0)
-
-            val distance = mainObject.getJSONObject("distance").get("text").toString()
-            val duration = mainObject.getJSONObject("duration").get("text").toString()
-
-            val origin = JSONObject(beforeParsingText[i]).get("origin_addresses").toString()
-            val destination = JSONObject(beforeParsingText[i]).get("destination_addresses").toString()
-
-
-            //String builder to remove unnecessary characters for origin and destination string
-            val cleanOrigin = cleanCode2(origin)
-            val cleanDestination = cleanCode2(destination)
-
-            //new code
-            afterParsingJSON2[i] = "From $cleanOrigin to $cleanDestination, the distance is $distance and the duration is $duration "
-            var vehicleType = ""
-            when (i) {
-                0 -> vehicleType = "driving"
-                1 -> vehicleType = "walking"
-                2 -> vehicleType = "bicycling"
-                3 -> vehicleType = "bus"
-                4 -> vehicleType = "subway"
-                5 -> vehicleType = "train"
-            }
-            afterParsingJSON2[i] += "when travelling by $vehicleType"
-
-        }
-    }
-
-
-    //Function to clean code for origins and destinations
-    fun cleanCode2(str: String): String {
-        val stringAppender = StringBuilder()
-        for (a in 0 until str.length) {
-            if (str[a] != '[' && str[a] != ']' && str[a] != '"') {
-                stringAppender.append(str[a])
-            }
-        }
-        return stringAppender.toString()
-    }
 
 */

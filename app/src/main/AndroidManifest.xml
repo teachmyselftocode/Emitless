@@ -12,6 +12,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyAbg8RMQFaosgVty6f8WubeKX0yEJ4Hj9Y"/>
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,7 +25,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".Page2" />
-        <activity android:name=".GridayoutActivity"></activity>
+        <activity android:name=".GridayoutActivity" />
     </application>
 
 </manifest>

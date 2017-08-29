@@ -1,128 +1,182 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainLinear"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorGreen1"
+    android:orientation="vertical"
     tools:context="com.companyname.emitless2.MainActivity">
-
-    <EditText
-        android:id="@+id/idInputOrigin"
-        android:layout_width="300dp"
-        android:layout_height="43dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:ems="10"
-        android:hint="Enter Origin"
-        android:inputType="textAutoComplete"
-        android:textColor="@android:color/background_light"
-        android:textColorLink="@color/colorGreen3"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/idTextView1" />
-
-    <Button
-        android:id="@+id/idBuTest2"
-        android:layout_width="85dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="292dp"
-        android:layout_marginTop="444dp"
-        android:background="@android:color/darker_gray"
-        android:onClick="buTest2"
-        android:text="Asynctask"
-        android:visibility="invisible"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/idBuTest"
-        android:layout_width="85dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="444dp"
-        android:background="@android:color/darker_gray"
-        android:onClick="buTest"
-        android:text="Test"
-        android:visibility="invisible"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/idTextView1"
-        android:layout_width="300dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Where are you going?"
+        android:text="Find out how much CO2 emissions your transportation have caused"
         android:textAlignment="center"
-        android:textColor="@android:color/darker_gray"
-        android:textSize="36sp"
+        android:textColor="@color/common_google_signin_btn_text_dark_pressed"
+        android:textSize="26sp"
         android:textStyle="bold"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <EditText
-        android:id="@+id/idInputDestination"
-        android:layout_width="300dp"
+    <LinearLayout
+        android:id="@+id/idOriginLayout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="24dp"
-        android:ems="10"
-        android:hint="Enter Destination"
-        android:inputType="textAutoComplete"
-        android:textColor="@android:color/background_light"
-        android:textColorLink="@color/colorGreen3"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/idInputOrigin" />
 
-    <Button
-        android:id="@+id/idbuGo"
-        android:layout_width="85dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="40dp"
-        android:layout_marginTop="244dp"
-        android:background="@color/colorGreen4"
-        android:onClick="buGo"
-        android:text="Go"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/idbuGoogleMapButton2"
-        android:layout_width="300dp"
-        android:layout_height="0dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="376dp"
-        android:background="@color/colorGreen2"
-        android:onClick="buShowOriginInput"
-        android:text="Want to use your own origin?"
-        android:visibility="visible"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <ProgressBar
-        android:id="@+id/idProgressBar"
-        style="@android:style/Widget.DeviceDefault.ProgressBar"
-        android:layout_width="112dp"
-        android:layout_height="123dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:indeterminate="false"
-        android:visibility="invisible"
+        android:orientation="vertical"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.467"
-        tools:visibility="invisible" />
+        app:layout_constraintTop_toBottomOf="@+id/idTextView1"
+        app:layout_constraintVertical_bias="0.75"
+        tools:layout_editor_absoluteX="0dp">
 
+        <TextView
+            android:id="@+id/idTextViewOrigin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Enter Origin:"
+            android:textAlignment="center"
+            android:textSize="24sp" />
 
-</android.support.constraint.ConstraintLayout>
+        <EditText
+            android:id="@+id/idInputOrigin"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:ems="10"
+            android:hint="Enter Origin"
+            android:inputType="textAutoComplete"
+            android:textColor="@android:color/background_light"
+            android:textColorLink="@color/colorGreen3"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/idTextView1" />
+
+        <android.support.v7.widget.CardView
+            android:id="@+id/idCardView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:layout_weight="1">
+
+            <fragment
+                android:id="@+id/place_autocomplete_fragment"
+                android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment"
+                android:layout_width="140pt"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center" />
+
+        </android.support.v7.widget.CardView>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/idDestinationLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="20dp"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="196dp">
+
+        <TextView
+            android:id="@+id/idTextViewDestination"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Enter Destination:"
+            android:textAlignment="center"
+            android:textSize="24sp" />
+
+        <EditText
+            android:id="@+id/idInputDestination"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:ems="10"
+            android:hint="Enter Destination"
+            android:inputType="textAutoComplete"
+            android:textColor="@android:color/background_light"
+            android:textColorLink="@color/colorGreen3"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <android.support.v7.widget.CardView
+            android:id="@+id/idCardView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:layout_weight="1">
+
+            <fragment
+                android:id="@+id/place_autocomplete_fragment2"
+                android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment"
+                android:layout_width="140pt"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center" />
+
+        </android.support.v7.widget.CardView>
+
+        <Button
+            android:id="@+id/idBuOriginToggle"
+            android:layout_width="183dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:layout_weight="1"
+            android:background="@color/colorGreen2"
+            android:onClick="buShowOriginLayout"
+            android:text="Input Origin"
+            android:textAlignment="center"
+            android:visibility="visible" />
+
+    </LinearLayout>
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toBottomOf="@id/idDestinationLayout">
+
+        <ProgressBar
+            android:id="@+id/idProgressBar"
+            style="@android:style/Widget.DeviceDefault.ProgressBar"
+            android:layout_width="112dp"
+            android:layout_height="123dp"
+            android:layout_alignTop="@+id/idbuGo"
+            android:layout_centerHorizontal="true"
+            android:indeterminate="false"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.195"
+            tools:visibility="invisible" />
+
+        <Button
+            android:id="@+id/idbuGo"
+            android:layout_width="85dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/idbuGoogleMapButton2"
+            android:layout_marginEnd="40dp"
+            android:layout_marginTop="28dp"
+            android:layout_toEndOf="@+id/idProgressBar"
+            android:layout_toRightOf="@+id/idProgressBar"
+            android:background="@color/colorGreen4"
+            android:onClick="buGo"
+            android:text="Go"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </android.support.constraint.ConstraintLayout>
+
+</LinearLayout>
